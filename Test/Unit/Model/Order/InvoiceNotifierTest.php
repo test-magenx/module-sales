@@ -47,9 +47,6 @@ class InvoiceNotifierTest extends TestCase
      */
     protected $invoiceSenderMock;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $this->historyCollectionFactory = $this->createPartialMock(
@@ -74,10 +71,8 @@ class InvoiceNotifierTest extends TestCase
 
     /**
      * Test case for successful email sending
-     *
-     * @return void
      */
-    public function testNotifySuccess(): void
+    public function testNotifySuccess()
     {
         $historyCollection = $this->getMockBuilder(Collection::class)
             ->addMethods(['setIsCustomerNotified'])
@@ -88,8 +83,11 @@ class InvoiceNotifierTest extends TestCase
             History::class,
             ['setIsCustomerNotified', 'save']
         );
-        $historyItem->method('setIsCustomerNotified')
+        $historyItem->expects($this->at(0))
+            ->method('setIsCustomerNotified')
             ->with(1);
+        $historyItem->expects($this->at(1))
+            ->method('save');
         $historyCollection->expects($this->once())
             ->method('getUnnotifiedForInstance')
             ->with($this->invoice)
@@ -110,10 +108,8 @@ class InvoiceNotifierTest extends TestCase
 
     /**
      * Test case when email has not been sent
-     *
-     * @return void
      */
-    public function testNotifyFail(): void
+    public function testNotifyFail()
     {
         $this->invoice->expects($this->once())
             ->method('getEmailSent')
@@ -123,10 +119,8 @@ class InvoiceNotifierTest extends TestCase
 
     /**
      * Test case when Mail Exception has been thrown
-     *
-     * @return void
      */
-    public function testNotifyException(): void
+    public function testNotifyException()
     {
         $exception = new MailException(__('Email has not been sent'));
         $this->invoiceSenderMock->expects($this->once())

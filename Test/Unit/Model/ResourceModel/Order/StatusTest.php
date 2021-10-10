@@ -43,9 +43,6 @@ class StatusTest extends TestCase
      */
     protected $selectMock;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $this->selectMock = $this->createMock(Select::class);
@@ -60,10 +57,10 @@ class StatusTest extends TestCase
 
         $this->resourceMock = $this->createMock(ResourceConnection::class);
         $tableName = 'sales_order_status_state';
-        $this->resourceMock
+        $this->resourceMock->expects($this->at(1))
             ->method('getTableName')
-            ->withConsecutive([], [$tableName])
-            ->willReturn(null, $tableName);
+            ->with($tableName)
+            ->willReturn($tableName);
         $this->resourceMock->expects($this->any())
             ->method('getConnection')
             ->willReturn(
@@ -81,10 +78,7 @@ class StatusTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testAssignState(): void
+    public function testAssignState()
     {
         $state = 'processing';
         $status = 'processing';
@@ -106,7 +100,7 @@ class StatusTest extends TestCase
                     'status' => $status,
                     'state' => $state,
                     'is_default' => $isDefault,
-                    'visible_on_front' => $visibleOnFront
+                    'visible_on_front' => $visibleOnFront,
                 ]
             );
         $this->model->assignState($status, $state, $isDefault, $visibleOnFront);

@@ -14,12 +14,9 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\ViewInterface;
 use Magento\Framework\Controller\Result\RedirectFactory;
-use Magento\Framework\Exception\InputException;
 use Magento\Framework\Message\ManagerInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
-use Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException;
-use Magento\Framework\Stdlib\Cookie\FailureToSendException;
 use Magento\Framework\Stdlib\Cookie\PublicCookieMetadata;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
@@ -39,49 +36,31 @@ use PHPUnit\Framework\TestCase;
  */
 class GuestTest extends TestCase
 {
-    /**
-     * @var Guest
-     */
+    /** @var Guest */
     protected $guest;
 
-    /**
-     * @var Session|MockObject
-     */
+    /** @var Session|MockObject */
     protected $sessionMock;
 
-    /**
-     * @var CookieManagerInterface|MockObject
-     */
+    /** @var CookieManagerInterface|MockObject */
     protected $cookieManagerMock;
 
-    /**
-     * @var CookieMetadataFactory|MockObject
-     */
+    /** @var CookieMetadataFactory|MockObject */
     protected $cookieMetadataFactoryMock;
 
-    /**
-     * @var ManagerInterface|MockObject
-     */
+    /** @var ManagerInterface|MockObject */
     protected $managerInterfaceMock;
 
-    /**
-     * @var MockObject
-     */
+    /** @var MockObject */
     protected $orderFactoryMock;
 
-    /**
-     * @var ViewInterface|MockObject
-     */
+    /** @var ViewInterface|MockObject */
     protected $viewInterfaceMock;
 
-    /**
-     * @var Store|MockObject
-     */
+    /** @var Store|MockObject */
     protected $storeModelMock;
 
-    /**
-     * @var Order|MockObject
-     */
+    /** @var Order|MockObject */
     protected $salesOrderMock;
 
     /**
@@ -94,9 +73,6 @@ class GuestTest extends TestCase
      */
     private $searchCriteriaBuilder;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $appContextHelperMock = $this->createMock(Context::class);
@@ -125,20 +101,20 @@ class GuestTest extends TestCase
             ]
         );
         $this->orderRepository = $this->getMockBuilder(OrderRepositoryInterface::class)
-            ->onlyMethods(['getList'])
+            ->setMethods(['getList'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $this->searchCriteriaBuilder = $this->getMockBuilder(SearchCriteriaBuilder::class)
-            ->onlyMethods(['addFilter', 'create'])
+            ->setMethods(['addFilter', 'create'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $orderSearchResult = $this->getMockBuilder(OrderSearchResultInterface::class)
-            ->onlyMethods(['getTotalCount', 'getItems'])
+            ->setMethods(['getTotalCount', 'getItems'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $resultRedirectFactory =
             $this->getMockBuilder(RedirectFactory::class)
-                ->onlyMethods(['create'])
+                ->setMethods(['create'])
                 ->disableOriginalConstructor()
                 ->getMock();
         $this->orderRepository->method('getList')->willReturn($orderSearchResult);
@@ -175,14 +151,12 @@ class GuestTest extends TestCase
      * Test load valid order with non empty post data.
      *
      * @param array $post
-     *
-     * @return void
-     * @throws InputException
-     * @throws CookieSizeLimitReachedException
-     * @throws FailureToSendException
      * @dataProvider loadValidOrderNotEmptyPostDataProvider
+     * @throws \Magento\Framework\Exception\InputException
+     * @throws \Magento\Framework\Stdlib\Cookie\CookieSizeLimitReachedException
+     * @throws \Magento\Framework\Stdlib\Cookie\FailureToSendException
      */
-    public function testLoadValidOrderNotEmptyPost(array $post): void
+    public function testLoadValidOrderNotEmptyPost($post)
     {
         $incrementId = $post['oar_order_id'];
         $protectedCode = 'protectedCode';
@@ -191,11 +165,16 @@ class GuestTest extends TestCase
         $requestMock->expects($this->once())->method('getPostValue')->willReturn($post);
 
         $this->searchCriteriaBuilder
+            ->expects($this->at(0))
             ->method('addFilter')
-            ->withConsecutive(
-                ['increment_id', trim($incrementId)],
-                ['store_id', $this->storeModelMock->getId()]
-            )->willReturnOnConsecutiveCalls($this->searchCriteriaBuilder, $this->searchCriteriaBuilder);
+            ->with('increment_id', trim($incrementId))
+            ->willReturnSelf();
+
+        $this->searchCriteriaBuilder
+            ->expects($this->at(1))
+            ->method('addFilter')
+            ->with('store_id', $this->storeModelMock->getId())
+            ->willReturnSelf();
 
         $this->salesOrderMock->expects($this->any())->method('getId')->willReturn($incrementId);
 
@@ -204,9 +183,9 @@ class GuestTest extends TestCase
             ['getLastname', 'getEmail', 'getPostcode']
         );
         $billingAddressMock->expects($this->once())->method('getLastname')
-            ->willReturn($post['oar_billing_lastname']);
-        $billingAddressMock->expects($this->any())->method('getEmail')->willReturn($post['oar_email']);
-        $billingAddressMock->expects($this->any())->method('getPostcode')->willReturn($post['oar_zip']);
+            ->willReturn(trim($post['oar_billing_lastname']));
+        $billingAddressMock->expects($this->any())->method('getEmail')->willReturn(trim($post['oar_email']));
+        $billingAddressMock->expects($this->any())->method('getPostcode')->willReturn(trim($post['oar_zip']));
         $this->salesOrderMock->expects($this->once())->method('getBillingAddress')->willReturn($billingAddressMock);
         $this->salesOrderMock->expects($this->once())->method('getProtectCode')->willReturn($protectedCode);
         $metaDataMock = $this->createMock(PublicCookieMetadata::class);
@@ -235,7 +214,7 @@ class GuestTest extends TestCase
      *
      * @return array
      */
-    public function loadValidOrderNotEmptyPostDataProvider(): array
+    public function loadValidOrderNotEmptyPostDataProvider()
     {
         return [
             [
@@ -244,7 +223,8 @@ class GuestTest extends TestCase
                     'oar_type' => 'email',
                     'oar_billing_lastname' => 'White',
                     'oar_email' => 'test@magento-test.com',
-                    'oar_zip' => ''
+                    'oar_zip' => '',
+
                 ]
             ],
             [
@@ -253,7 +233,7 @@ class GuestTest extends TestCase
                     'oar_type' => 'email',
                     'oar_billing_lastname' => 'Black  ',
                     'oar_email' => '        test1@magento-test.com  ',
-                    'oar_zip' => ''
+                    'oar_zip' => '',
                 ]
             ],
             [
@@ -262,16 +242,13 @@ class GuestTest extends TestCase
                     'oar_type' => 'zip',
                     'oar_billing_lastname' => 'Black  ',
                     'oar_email' => '        test1@magento-test.com  ',
-                    'oar_zip' => '123456  '
+                    'oar_zip' => '123456  ',
                 ]
             ]
         ];
     }
 
-    /**
-     * @return void
-     */
-    public function testLoadValidOrderStoredCookie(): void
+    public function testLoadValidOrderStoredCookie()
     {
         $protectedCode = 'protectedCode';
         $incrementId = '1';
@@ -284,11 +261,16 @@ class GuestTest extends TestCase
             ->willReturn($cookieDataHash);
 
         $this->searchCriteriaBuilder
+            ->expects($this->at(0))
             ->method('addFilter')
-            ->withConsecutive(
-                ['increment_id', trim($incrementId)],
-                ['store_id', $this->storeModelMock->getId()]
-            )->willReturnOnConsecutiveCalls($this->searchCriteriaBuilder, $this->searchCriteriaBuilder);
+            ->with('increment_id', trim($incrementId))
+            ->willReturnSelf();
+
+        $this->searchCriteriaBuilder
+            ->expects($this->at(1))
+            ->method('addFilter')
+            ->with('store_id', $this->storeModelMock->getId())
+            ->willReturnSelf();
 
         $this->salesOrderMock->expects($this->any())->method('getId')->willReturn($incrementId);
         $this->salesOrderMock->expects($this->once())->method('getProtectCode')->willReturn($protectedCode);

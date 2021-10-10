@@ -7,7 +7,6 @@ namespace Magento\Sales\Model\ResourceModel\Provider;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Sales\Model\Grid\LastUpdateTimeCache;
 
 /**
  * Retrieves ID's of not synced by `updated_at` column entities.
@@ -27,21 +26,12 @@ class UpdatedAtListProvider implements NotSyncedDataProviderInterface
     private $connection;
 
     /**
-     * @var LastUpdateTimeCache
-     */
-    private $lastUpdateTimeCache;
-
-    /**
      * @param ResourceConnection $resourceConnection
-     * @param LastUpdateTimeCache $lastUpdateTimeCache
      */
-    public function __construct(
-        ResourceConnection $resourceConnection,
-        LastUpdateTimeCache $lastUpdateTimeCache
-    ) {
+    public function __construct(ResourceConnection $resourceConnection)
+    {
         $this->connection = $resourceConnection->getConnection('sales');
         $this->resourceConnection = $resourceConnection;
-        $this->lastUpdateTimeCache = $lastUpdateTimeCache;
     }
 
     /**
@@ -49,18 +39,21 @@ class UpdatedAtListProvider implements NotSyncedDataProviderInterface
      */
     public function getIds($mainTableName, $gridTableName)
     {
+        $mainTableName = $this->resourceConnection->getTableName($mainTableName);
+        $gridTableName = $this->resourceConnection->getTableName($gridTableName);
         $select = $this->connection->select()
-            ->from(['main_table' => $this->resourceConnection->getTableName($mainTableName)], ['main_table.entity_id'])
+            ->from($mainTableName, [$mainTableName . '.entity_id'])
             ->joinInner(
-                ['grid_table' => $this->resourceConnection->getTableName($gridTableName)],
-                'main_table.entity_id = grid_table.entity_id AND main_table.updated_at > grid_table.updated_at',
+                [$gridTableName => $gridTableName],
+                sprintf(
+                    '%s.entity_id = %s.entity_id AND %s.updated_at > %s.updated_at',
+                    $mainTableName,
+                    $gridTableName,
+                    $mainTableName,
+                    $gridTableName
+                ),
                 []
             );
-
-        $lastUpdatedAt = $this->lastUpdateTimeCache->get($gridTableName);
-        if ($lastUpdatedAt) {
-            $select->where('main_table.updated_at > ?', $lastUpdatedAt);
-        }
 
         return $this->connection->fetchAll($select, [], \Zend_Db::FETCH_COLUMN);
     }

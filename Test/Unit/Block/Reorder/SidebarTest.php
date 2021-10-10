@@ -33,54 +33,51 @@ class SidebarTest extends TestCase
     /**
      * @var Sidebar|MockObject
      */
-    private $block;
+    protected $block;
 
     /**
      * @var \Magento\Framework\View\Element\Template\Context|MockObject
      */
-    private $context;
+    protected $context;
 
     /**
      * @var CollectionFactory|MockObject
      */
-    private $orderCollectionFactory;
+    protected $orderCollectionFactory;
 
     /**
      * @var Session|MockObject
      */
-    private $customerSession;
+    protected $customerSession;
 
     /**
      * @var Config|MockObject
      */
-    private $orderConfig;
+    protected $orderConfig;
 
     /**
      * @var \Magento\Framework\App\Http\Context|MockObject
      */
-    private $httpContext;
+    protected $httpContext;
 
     /**
      * @var Collection|MockObject
      */
-    private $orderCollection;
+    protected $orderCollection;
 
     /**
      * @var ObjectManager
      */
-    private $objectManagerHelper;
+    protected $objectManagerHelper;
 
     /** @var MockObject */
-    private $stockItemMock;
+    protected $stockItemMock;
 
     /**
      * @var MockObject
      */
-    private $stockRegistry;
+    protected $stockRegistry;
 
-    /**
-     * @inheritdoc
-     */
     protected function setUp(): void
     {
         $this->markTestIncomplete('MAGETWO-36789');
@@ -103,7 +100,7 @@ class SidebarTest extends TestCase
             ->getMock();
         $this->stockRegistry = $this->getMockBuilder(StockRegistry::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getStockItem'])
+            ->setMethods(['getStockItem'])
             ->getMock();
 
         $this->stockItemMock = $this->createPartialMock(
@@ -116,18 +113,12 @@ class SidebarTest extends TestCase
             ->willReturn($this->stockItemMock);
     }
 
-    /**
-     * @inheritdoc
-     */
     protected function tearDown(): void
     {
         $this->block = null;
     }
 
-    /**
-     * @return void
-     */
-    protected function createBlockObject(): void
+    protected function createBlockObject()
     {
         $this->block = $this->objectManagerHelper->getObject(
             Sidebar::class,
@@ -137,15 +128,12 @@ class SidebarTest extends TestCase
                 'orderConfig' => $this->orderConfig,
                 'customerSession' => $this->customerSession,
                 'httpContext' => $this->httpContext,
-                'stockRegistry' => $this->stockRegistry
+                'stockRegistry' => $this->stockRegistry,
             ]
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testGetIdentities(): void
+    public function testGetIdentities()
     {
         $websiteId = 1;
         $storeId = null;
@@ -177,8 +165,7 @@ class SidebarTest extends TestCase
             ->method('getWebsiteIds')
             ->willReturn([$websiteId]);
 
-        $item = $this->getMockBuilder(\Magento\Sales\Model\ResourceModel\Order\Item::class)
-            ->addMethods(['getProduct'])
+        $item = $this->getMockBuilder(\Magento\Sales\Model\ResourceModel\Order\Item::class)->addMethods(['getProduct'])
             ->disableOriginalConstructor()
             ->getMock();
         $item->expects($this->atLeastOnce())
@@ -199,10 +186,7 @@ class SidebarTest extends TestCase
         $this->assertEquals($productTags, $this->block->getIdentities());
     }
 
-    /**
-     * @return void
-     */
-    public function testInitOrders(): void
+    public function testInitOrders()
     {
         $customerId = 25;
         $attribute = ['customer_id', 'status'];
@@ -221,15 +205,21 @@ class SidebarTest extends TestCase
             ->method('getVisibleOnFrontStatuses')
             ->willReturn($statuses);
 
-        $this->orderCollection->method('addAttributeToFilter')
-            ->withConsecutive([$attribute[0], $customerId], [$attribute[1], ['in' => $statuses]])
-            ->willReturnOnConsecutiveCalls($this->orderCollection, $this->orderCollection);
-        $this->orderCollection->method('setPage')
-            ->with(1, 1)
-            ->willReturn($this->orderCollection);
-        $this->orderCollection->method('addAttributeToSort')
-            ->with('created_at', 'desc')
-            ->willReturn($this->orderCollection);
+        $this->orderCollection->expects($this->at(0))
+            ->method('addAttributeToFilter')
+            ->with(
+                $attribute[0],
+                $customerId
+            )->willReturnSelf();
+        $this->orderCollection->expects($this->at(1))
+            ->method('addAttributeToFilter')
+            ->with($attribute[1], ['in' => $statuses])->willReturnSelf();
+        $this->orderCollection->expects($this->at(2))
+            ->method('addAttributeToSort')
+            ->with('created_at', 'desc')->willReturnSelf();
+        $this->orderCollection->expects($this->at(3))
+            ->method('setPage')
+            ->with(1, 1)->willReturnSelf();
 
         $this->orderCollectionFactory->expects($this->atLeastOnce())
             ->method('create')
@@ -238,10 +228,7 @@ class SidebarTest extends TestCase
         $this->assertEquals($this->orderCollection, $this->block->getOrders());
     }
 
-    /**
-     * @return void
-     */
-    public function testIsItemAvailableForReorder(): void
+    public function testIsItemAvailableForReorder()
     {
         $productId = 1;
         $result = true;
@@ -256,7 +243,7 @@ class SidebarTest extends TestCase
             ->method('getStockItem')
             ->willReturn($this->stockItemMock);
 
-        $orderItem = $this->createPartialMock(Order\Item::class, ['getStore', 'getProduct']);
+        $orderItem = $this->createPartialMock(\Magento\Sales\Model\Order\Item::class, ['getStore', 'getProduct']);
         $orderItem->expects($this->any())
             ->method('getProduct')
             ->willReturn($product);
@@ -272,17 +259,14 @@ class SidebarTest extends TestCase
         $this->assertSame($result, $this->block->isItemAvailableForReorder($orderItem));
     }
 
-    /**
-     * @return void
-     */
-    public function testItemNotAvailableForReorderWhenProductNotExist(): void
+    public function testItemNotAvailableForReorderWhenProductNotExist()
     {
         $this->stockItemMock->expects($this->never())->method('getIsInStock');
         $this->stockRegistry->expects($this->any())
             ->method('getStockItem')
             ->willReturn($this->stockItemMock);
 
-        $orderItem = $this->createMock(Order\Item::class);
+        $orderItem = $this->createMock(\Magento\Sales\Model\Order\Item::class);
         $orderItem->expects($this->any())
             ->method('getProduct')
             ->willThrowException(new NoSuchEntityException());

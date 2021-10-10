@@ -9,7 +9,6 @@ namespace Magento\Sales\Test\Unit\Model;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Framework\DB\Select;
 use Magento\Sales\Api\Data\InvoiceCommentCreationInterface;
 use Magento\Sales\Api\Data\InvoiceCreationArgumentsInterface;
 use Magento\Sales\Api\Data\InvoiceInterface;
@@ -27,7 +26,6 @@ use Magento\Sales\Model\Order\InvoiceRepository;
 use Magento\Sales\Model\Order\OrderStateResolverInterface;
 use Magento\Sales\Model\Order\PaymentAdapterInterface;
 use Magento\Sales\Model\Order\Validation\InvoiceOrderInterface;
-use Magento\Sales\Model\OrderMutex;
 use Magento\Sales\Model\ValidatorResultInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -202,8 +200,7 @@ class InvoiceOrderTest extends TestCase
             $this->invoiceRepositoryMock,
             $this->invoiceOrderValidatorMock,
             $this->notifierInterfaceMock,
-            $this->loggerMock,
-            new OrderMutex($this->resourceConnectionMock)
+            $this->loggerMock
         );
     }
 
@@ -219,7 +216,10 @@ class InvoiceOrderTest extends TestCase
      */
     public function testOrderInvoice($orderId, $capture, $items, $notify, $appendComment)
     {
-        $this->mockConnection($orderId);
+        $this->resourceConnectionMock->expects($this->once())
+            ->method('getConnection')
+            ->with('sales')
+            ->willReturn($this->adapterInterface);
         $this->orderRepositoryMock->expects($this->once())
             ->method('get')
             ->willReturn($this->orderMock);
@@ -315,7 +315,7 @@ class InvoiceOrderTest extends TestCase
         $notify = true;
         $appendComment = true;
         $errorMessages = ['error1', 'error2'];
-        $this->mockConnection($orderId);
+
         $this->orderRepositoryMock->expects($this->once())
             ->method('get')
             ->willReturn($this->orderMock);
@@ -369,7 +369,10 @@ class InvoiceOrderTest extends TestCase
         $capture = true;
         $notify = true;
         $appendComment = true;
-        $this->mockConnection($orderId);
+        $this->resourceConnectionMock->expects($this->once())
+            ->method('getConnection')
+            ->with('sales')
+            ->willReturn($this->adapterInterface);
 
         $this->orderRepositoryMock->expects($this->once())
             ->method('get')
@@ -436,35 +439,5 @@ class InvoiceOrderTest extends TestCase
             'TestWithNotifyTrue' => [1, true, [1 => 2], true, true],
             'TestWithNotifyFalse' => [1, true, [1 => 2], false, true],
         ];
-    }
-
-    /**
-     * @param int $orderId
-     */
-    private function mockConnection(int $orderId): void
-    {
-        $select = $this->createMock(Select::class);
-        $select->expects($this->once())
-            ->method('from')
-            ->with('sales_order', 'entity_id')
-            ->willReturnSelf();
-        $select->expects($this->once())
-            ->method('where')
-            ->with('entity_id = ?', $orderId)
-            ->willReturnSelf();
-        $select->expects($this->once())
-            ->method('forUpdate')
-            ->with(true)
-            ->willReturnSelf();
-        $this->adapterInterface->expects($this->once())
-            ->method('select')
-            ->willReturn($select);
-        $this->resourceConnectionMock->expects($this->once())
-            ->method('getConnection')
-            ->with('sales')
-            ->willReturn($this->adapterInterface);
-        $this->resourceConnectionMock->expects($this->once())
-            ->method('getTableName')
-            ->willReturnArgument(0);
     }
 }

@@ -118,18 +118,17 @@ class NewActionTest extends TestCase
      */
     private $orderRepositoryMock;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $objectManager = new ObjectManager($this);
 
         $titleMock = $this->getMockBuilder(\Magento\Framework\App\Action\Title::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $this->viewMock = $this->getMockBuilder(View::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
 
         $this->messageManagerMock = $this->getMockForAbstractClass(ManagerInterface::class);
@@ -137,25 +136,30 @@ class NewActionTest extends TestCase
 
         $this->actionFlagMock = $this->getMockBuilder(ActionFlag::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
 
         $this->helperMock = $this->getMockBuilder(Data::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
 
         $this->requestMock = $this->getMockBuilder(Http::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $this->responseMock = $this->getMockBuilder(\Magento\Framework\App\Response\Http::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
 
         $this->sessionMock = $this->getMockBuilder(Session::class)
             ->disableOriginalConstructor()
-            ->addMethods(['getCommentText', 'setIsUrlNotice'])
+            ->setMethods(['getCommentText', 'setIsUrlNotice'])
             ->getMock();
         $this->resultPageMock = $this->getMockBuilder(Page::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $this->pageConfigMock = $this->getMockBuilder(Config::class)
             ->disableOriginalConstructor()
@@ -165,27 +169,31 @@ class NewActionTest extends TestCase
             ->getMock();
         $this->resultPageFactoryMock = $this->getMockBuilder(PageFactory::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+            ->setMethods(['create'])
             ->getMock();
 
-        $this->resultRedirectFactoryMock = $this->getMockBuilder(RedirectFactory::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+        $this->resultRedirectFactoryMock = $this->getMockBuilder(
+            RedirectFactory::class
+        )->disableOriginalConstructor()
+            ->setMethods(['create'])
             ->getMock();
 
         $contextMock = $this->getMockBuilder(Context::class)
             ->disableOriginalConstructor()
-            ->onlyMethods([
-                'getRequest',
-                'getResponse',
-                'getObjectManager',
-                'getSession',
-                'getHelper',
-                'getActionFlag',
-                'getMessageManager',
-                'getResultRedirectFactory',
-                'getView'
-            ])->addMethods(['getTitle'])
+            ->setMethods(
+                [
+                    'getRequest',
+                    'getResponse',
+                    'getObjectManager',
+                    'getTitle',
+                    'getSession',
+                    'getHelper',
+                    'getActionFlag',
+                    'getMessageManager',
+                    'getResultRedirectFactory',
+                    'getView'
+                ]
+            )
             ->getMock();
         $contextMock->expects($this->any())
             ->method('getRequest')
@@ -248,22 +256,24 @@ class NewActionTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testExecute(): void
+    public function testExecute()
     {
         $orderId = 1;
         $invoiceData = [];
         $commentText = 'comment test';
 
-        $this->requestMock
+        $this->requestMock->expects($this->at(0))
             ->method('getParam')
-            ->withConsecutive(['order_id'], ['invoice', []])
-            ->willReturnOnConsecutiveCalls($orderId, $invoiceData);
+            ->with('order_id')
+            ->willReturn($orderId);
+        $this->requestMock->expects($this->at(1))
+            ->method('getParam')
+            ->with('invoice', [])
+            ->willReturn($invoiceData);
 
         $invoiceMock = $this->getMockBuilder(Invoice::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $invoiceMock->expects($this->once())
             ->method('getTotalQty')
@@ -271,7 +281,7 @@ class NewActionTest extends TestCase
 
         $orderMock = $this->getMockBuilder(Order::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['load', 'canInvoice'])
+            ->setMethods(['load', 'canInvoice'])
             ->getMock();
         $orderMock->expects($this->once())
             ->method('canInvoice')
@@ -289,8 +299,7 @@ class NewActionTest extends TestCase
 
         $menuBlockMock = $this->getMockBuilder(Menu::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getMenuModel'])
-            ->addMethods(['getParentItems'])
+            ->setMethods(['getParentItems', 'getMenuModel'])
             ->getMock();
         $menuBlockMock->expects($this->any())
             ->method('getMenuModel')->willReturnSelf();
@@ -317,22 +326,23 @@ class NewActionTest extends TestCase
         $this->assertSame($this->resultPageMock, $this->controller->execute());
     }
 
-    /**
-     * @return void
-     */
-    public function testExecuteNoOrder(): void
+    public function testExecuteNoOrder()
     {
         $orderId = 1;
         $invoiceData = [];
 
-        $this->requestMock
+        $this->requestMock->expects($this->at(0))
             ->method('getParam')
-            ->withConsecutive(['order_id'], ['invoice', []])
-            ->willReturnOnConsecutiveCalls($orderId, $invoiceData);
+            ->with('order_id')
+            ->willReturn($orderId);
+        $this->requestMock->expects($this->at(1))
+            ->method('getParam')
+            ->with('invoice', [])
+            ->willReturn($invoiceData);
 
         $orderMock = $this->getMockBuilder(Order::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['canInvoice'])
+            ->setMethods(['canInvoice'])
             ->getMock();
 
         $this->orderRepositoryMock->expects($this->once())
@@ -342,6 +352,7 @@ class NewActionTest extends TestCase
 
         $resultRedirect = $this->getMockBuilder(Redirect::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $resultRedirect->expects($this->once())->method('setPath')->with('sales/order/view', ['order_id' => $orderId]);
 

@@ -80,13 +80,12 @@ class InfoTest extends TestCase
     /**
      * Get data cc number
      *
+     * @dataProvider ccKeysDataProvider
      * @param string $keyCc
      * @param string $keyCcEnc
-     *
      * @return void
-     * @dataProvider ccKeysDataProvider
      */
-    public function testGetDataCcNumber(string $keyCc, string $keyCcEnc): void
+    public function testGetDataCcNumber($keyCc, $keyCcEnc): void
     {
         // no data was set
         $this->assertNull($this->info->getData($keyCc));
@@ -153,13 +152,18 @@ class InfoTest extends TestCase
         $method = 'unreal_method';
         $this->info->setData('method', $method);
 
+        $this->paymentHelperMock->expects($this->at(0))
+            ->method('getMethodInstance')
+            ->with($method)
+            ->willThrowException(new \UnexpectedValueException());
+
         $this->methodInstanceMock->expects($this->once())
             ->method('setInfoInstance')
             ->with($this->info);
 
-        $this->paymentHelperMock
+        $this->paymentHelperMock->expects($this->at(1))
             ->method('getMethodInstance')
-            ->withConsecutive([$method], [Substitution::CODE])
+            ->with(Substitution::CODE)
             ->willReturn($this->methodInstanceMock);
 
         $this->info->getMethodInstance();
@@ -253,11 +257,10 @@ class InfoTest extends TestCase
     /**
      * Set additional info multiple types
      *
+     * @dataProvider additionalInformationDataProvider
      * @param mixed $key
      * @param mixed $value
-     *
      * @return void
-     * @dataProvider additionalInformationDataProvider
      */
     public function testSetAdditionalInformationMultipleTypes($key, $value = null): void
     {

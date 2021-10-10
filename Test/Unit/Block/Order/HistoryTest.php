@@ -67,22 +67,17 @@ class HistoryTest extends TestCase
      */
     protected $pageTitleMock;
 
-    /**
-     * @inheirtDoc
-     */
     protected function setUp(): void
     {
         $this->context = $this->createMock(Context::class);
         $this->orderCollectionFactory =
             $this->getMockBuilder(CollectionFactory::class)
                 ->disableOriginalConstructor()
-                ->onlyMethods(['create'])
-                ->getMock();
+                ->setMethods(['create'])->getMock();
         $this->orderCollectionFactoryInterface =
             $this->getMockBuilder(CollectionFactoryInterface::class)
                 ->disableOriginalConstructor()
-                ->onlyMethods(['create'])
-                ->getMockForAbstractClass();
+                ->setMethods(['create'])->getMockForAbstractClass();
         $this->objectManager = $this->getMockForAbstractClass(ObjectManagerInterface::class);
         $this->objectManager->expects($this->any())
             ->method('get')
@@ -90,13 +85,11 @@ class HistoryTest extends TestCase
         ObjectManager::setInstance($this->objectManager);
 
         $this->customerSession = $this->getMockBuilder(Session::class)
-            ->onlyMethods(['getCustomerId'])
-            ->disableOriginalConstructor()
+            ->setMethods(['getCustomerId'])->disableOriginalConstructor()
             ->getMock();
 
         $this->orderConfig = $this->getMockBuilder(Config::class)
-            ->onlyMethods(['getVisibleOnFrontStatuses'])
-            ->disableOriginalConstructor()
+            ->setMethods(['getVisibleOnFrontStatuses'])->disableOriginalConstructor()
             ->getMock();
 
         $this->pageConfig = $this->getMockBuilder(\Magento\Framework\View\Page\Config::class)
@@ -107,10 +100,7 @@ class HistoryTest extends TestCase
             ->getMock();
     }
 
-    /**
-     * @return void
-     */
-    public function testConstructMethod(): void
+    public function testConstructMethod()
     {
         $data = [];
 
@@ -133,18 +123,15 @@ class HistoryTest extends TestCase
             ->method('getPageConfig')
             ->willReturn($this->pageConfig);
 
-        $orderCollection
+        $orderCollection->expects($this->at(0))
             ->method('addFieldToSelect')
-            ->with('*')
-            ->willReturn($orderCollection);
-        $orderCollection
-            ->method('setOrder')
-            ->with('created_at', 'desc')
-            ->willReturn($orderCollection);
-        $orderCollection
+            ->with('*')->willReturnSelf();
+        $orderCollection->expects($this->at(1))
             ->method('addFieldToFilter')
-            ->with('status', ['in' => $statuses])
-            ->willReturn($orderCollection);
+            ->with('status', ['in' => $statuses])->willReturnSelf();
+        $orderCollection->expects($this->at(2))
+            ->method('setOrder')
+            ->with('created_at', 'desc')->willReturnSelf();
         $this->orderCollectionFactoryInterface->expects($this->atLeastOnce())
             ->method('create')
             ->willReturn($orderCollection);

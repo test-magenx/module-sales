@@ -5,57 +5,42 @@
  */
 namespace Magento\Sales\Block\Adminhtml\Order\View\Tab;
 
-use Magento\Backend\Block\Widget\Tab\TabInterface;
-use Magento\Framework\App\ObjectManager;
-use Magento\Framework\AuthorizationInterface;
-use Magento\Framework\Registry;
-use Magento\Framework\View\Element\Context;
-use Magento\Framework\View\Element\Text\ListText;
-use Magento\Sales\Model\Order;
-
 /**
  * Order Shipments grid
  *
  * @api
  * @since 100.0.2
  */
-class Shipments extends ListText implements TabInterface
+class Shipments extends \Magento\Framework\View\Element\Text\ListText implements
+    \Magento\Backend\Block\Widget\Tab\TabInterface
 {
     /**
      * Core registry
      *
-     * @var Registry
+     * @var \Magento\Framework\Registry
      */
     protected $_coreRegistry = null;
 
     /**
-     * @var AuthorizationInterface
-     */
-    private $authorization;
-
-    /**
      * Collection factory
      *
-     * @param Context $context
-     * @param Registry $coreRegistry
+     * @param \Magento\Framework\View\Element\Context $context
+     * @param \Magento\Framework\Registry $coreRegistry
      * @param array $data
-     * @param AuthorizationInterface|null $authorization
      */
     public function __construct(
-        Context $context,
-        Registry $coreRegistry,
-        array $data = [],
-        ?AuthorizationInterface $authorization = null
+        \Magento\Framework\View\Element\Context $context,
+        \Magento\Framework\Registry $coreRegistry,
+        array $data = []
     ) {
         $this->_coreRegistry = $coreRegistry;
-        $this->authorization = $authorization ?? ObjectManager::getInstance()->get(AuthorizationInterface::class);
         parent::__construct($context, $data);
     }
 
     /**
      * Retrieve order model instance
      *
-     * @return Order
+     * @return \Magento\Sales\Model\Order
      */
     public function getOrder()
     {
@@ -63,7 +48,7 @@ class Shipments extends ListText implements TabInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getTabLabel()
     {
@@ -71,7 +56,7 @@ class Shipments extends ListText implements TabInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getTabTitle()
     {
@@ -79,15 +64,18 @@ class Shipments extends ListText implements TabInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function canShowTab()
     {
-        return $this->authorization->isAllowed('Magento_Sales::shipment') && !$this->getOrder()->getIsVirtual();
+        if ($this->getOrder()->getIsVirtual()) {
+            return false;
+        }
+        return true;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function isHidden()
     {

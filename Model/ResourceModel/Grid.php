@@ -8,11 +8,10 @@ namespace Magento\Sales\Model\ResourceModel;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\Model\ResourceModel\Db\Context;
-use Magento\Sales\Model\Grid\LastUpdateTimeCache;
 use Magento\Sales\Model\ResourceModel\Provider\NotSyncedDataProviderInterface;
 
 /**
- * Sales order grid resource model.
+ * Class Grid
  */
 class Grid extends AbstractGrid
 {
@@ -47,11 +46,6 @@ class Grid extends AbstractGrid
     private $notSyncedDataProvider;
 
     /**
-     * @var LastUpdateTimeCache
-     */
-    private $lastUpdateTimeCache;
-
-    /**
      * Order grid rows batch size
      */
     const BATCH_SIZE = 100;
@@ -64,8 +58,7 @@ class Grid extends AbstractGrid
      * @param array $joins
      * @param array $columns
      * @param string $connectionName
-     * @param NotSyncedDataProviderInterface|null $notSyncedDataProvider
-     * @param LastUpdateTimeCache|null $lastUpdateTimeCache
+     * @param NotSyncedDataProviderInterface $notSyncedDataProvider
      */
     public function __construct(
         Context $context,
@@ -75,19 +68,15 @@ class Grid extends AbstractGrid
         array $joins = [],
         array $columns = [],
         $connectionName = null,
-        NotSyncedDataProviderInterface $notSyncedDataProvider = null,
-        LastUpdateTimeCache $lastUpdateTimeCache = null
+        NotSyncedDataProviderInterface $notSyncedDataProvider = null
     ) {
         $this->mainTableName = $mainTableName;
         $this->gridTableName = $gridTableName;
         $this->orderIdField = $orderIdField;
         $this->joins = $joins;
         $this->columns = $columns;
-        $this->notSyncedDataProvider = $notSyncedDataProvider ??
-            ObjectManager::getInstance()->get(NotSyncedDataProviderInterface::class);
-        $this->lastUpdateTimeCache = $lastUpdateTimeCache ??
-            ObjectManager::getInstance()->get(LastUpdateTimeCache::class);
-
+        $this->notSyncedDataProvider =
+            $notSyncedDataProvider ?: ObjectManager::getInstance()->get(NotSyncedDataProviderInterface::class);
         parent::__construct($context, $connectionName);
     }
 
@@ -129,7 +118,6 @@ class Grid extends AbstractGrid
      */
     public function refreshBySchedule()
     {
-        $lastUpdatedAt = null;
         $notSyncedIds = $this->notSyncedDataProvider->getIds($this->mainTableName, $this->gridTableName);
         foreach (array_chunk($notSyncedIds, self::BATCH_SIZE) as $bunch) {
             $select = $this->getGridOriginSelect()->where($this->mainTableName . '.entity_id IN (?)', $bunch);
@@ -139,15 +127,6 @@ class Grid extends AbstractGrid
                 $fetchResult,
                 array_keys($this->columns)
             );
-
-            $timestamps = array_column($fetchResult, 'updated_at');
-            if ($timestamps) {
-                $lastUpdatedAt = max(max($timestamps), $lastUpdatedAt);
-            }
-        }
-
-        if ($lastUpdatedAt) {
-            $this->lastUpdateTimeCache->save($this->gridTableName, $lastUpdatedAt);
         }
     }
 

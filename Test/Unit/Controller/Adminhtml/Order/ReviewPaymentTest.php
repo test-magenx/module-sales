@@ -27,44 +27,28 @@ use Psr\Log\LoggerInterface;
  */
 class ReviewPaymentTest extends TestCase
 {
-    /**
-     * @var ReviewPayment|MockObject
-     */
+    /** @var ReviewPayment|MockObject */
     protected $reviewPayment;
 
-    /**
-     * @var  Context|MockObject
-     */
+    /** @var  Context|MockObject */
     protected $contextMock;
 
-    /**
-     * @var  OrderInterface|MockObject
-     */
+    /** @var  OrderInterface|MockObject */
     protected $orderMock;
 
-    /**
-     * @var  RedirectFactory|MockObject
-     */
+    /** @var  RedirectFactory|MockObject*/
     protected $resultRedirectFactoryMock;
 
-    /**
-     * @var Redirect|MockObject
-     */
+    /** @var Redirect|MockObject */
     protected $resultRedirectMock;
 
-    /**
-     * @var Http|MockObject
-     */
+    /**@var \Magento\Framework\App\Request\Http|MockObject */
     protected $requestMock;
 
-    /**
-     * @var  Payment|MockObject
-     */
+    /** @var  Payment|MockObject */
     protected $paymentMock;
 
-    /**
-     * @var Manager|MockObject
-     */
+    /** @var Manager|MockObject */
     protected $messageManagerMock;
 
     /**
@@ -83,7 +67,7 @@ class ReviewPaymentTest extends TestCase
     protected $loggerMock;
 
     /**
-     * @inheritDoc
+     * Test setup
      */
     protected function setUp(): void
     {
@@ -105,7 +89,7 @@ class ReviewPaymentTest extends TestCase
         $this->loggerMock = $this->getMockBuilder(LoggerInterface::class)
             ->getMockForAbstractClass();
         $this->orderMock = $this->getMockBuilder(OrderInterface::class)
-            ->onlyMethods(['getPayment'])
+            ->setMethods(['getPayment'])
             ->getMockForAbstractClass();
         $this->messageManagerMock = $this->createPartialMock(
             Manager::class,
@@ -129,7 +113,7 @@ class ReviewPaymentTest extends TestCase
         );
 
         $this->requestMock = $this->getMockBuilder(Http::class)
-            ->onlyMethods(['getParam'])
+            ->setMethods(['getParam'])
             ->disableOriginalConstructor()
             ->getMock();
         $this->contextMock->expects($this->once())->method('getRequest')->willReturn($this->requestMock);
@@ -149,17 +133,15 @@ class ReviewPaymentTest extends TestCase
     }
 
     /**
-     * @return void
+     * testExecuteUpdateAction
      */
-    public function testExecuteUpdateAction(): void
+    public function testExecuteUpdateAction()
     {
         $orderId = 30;
         $action = 'update';
 
-        $this->requestMock
-            ->method('getParam')
-            ->withConsecutive(['order_id'], ['action'])
-            ->willReturnOnConsecutiveCalls($orderId, $action);
+        $this->requestMock->expects($this->at(0))->method('getParam')->with('order_id')->willReturn($orderId);
+        $this->requestMock->expects($this->at(1))->method('getParam')->with('action')->willReturn($action);
 
         $this->resultRedirectFactoryMock->expects($this->once())->method('create')
             ->willReturn($this->resultRedirectMock);

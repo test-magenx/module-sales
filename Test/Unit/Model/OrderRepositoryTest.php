@@ -253,16 +253,15 @@ class OrderRepositoryTest extends TestCase
     {
         $mockBuilder = $this->getMockBuilder(OrderExtensionInterface::class)->disableOriginalConstructor();
         try {
-            $mockBuilder
-                ->addMethods(
-                    [
-                        'getShippingAssignments',
-                        'setAppliedTaxes',
-                        'setConvertingFromQuote',
-                        'setItemAppliedTaxes',
-                        'setPaymentAdditionalInfo'
-                    ]
-                );
+            $mockBuilder->addMethods(
+                [
+                    'getShippingAssignments',
+                    'setAppliedTaxes',
+                    'setConvertingFromQuote',
+                    'setItemAppliedTaxes',
+                    'setPaymentAdditionalInfo',
+                ]
+            );
         } catch (RuntimeException $e) {
             // Order extension already generated.
         }

@@ -5,43 +5,17 @@
  */
 namespace Magento\Sales\Block\Adminhtml\Order\View\Tab;
 
-use Magento\Backend\Block\Widget\Tab\TabInterface;
-use Magento\Framework\App\ObjectManager;
-use Magento\Framework\AuthorizationInterface;
-use Magento\Framework\View\Element\Context;
-use Magento\Framework\View\Element\Text\ListText;
-
 /**
  * Order Invoices grid
  *
  * @api
  * @since 100.0.2
  */
-class Invoices extends ListText implements TabInterface
+class Invoices extends \Magento\Framework\View\Element\Text\ListText implements
+    \Magento\Backend\Block\Widget\Tab\TabInterface
 {
     /**
-     * @var AuthorizationInterface
-     */
-    private $authorization;
-
-    /**
-     * Invoices constructor.
-     *
-     * @param Context $context
-     * @param array $data
-     * @param AuthorizationInterface|null $authorization
-     */
-    public function __construct(
-        Context $context,
-        array $data = [],
-        ?AuthorizationInterface $authorization = null
-    ) {
-        $this->authorization = $authorization ?? ObjectManager::getInstance()->get(AuthorizationInterface::class);
-        parent::__construct($context, $data);
-    }
-
-    /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getTabLabel()
     {
@@ -49,7 +23,7 @@ class Invoices extends ListText implements TabInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getTabTitle()
     {
@@ -57,15 +31,15 @@ class Invoices extends ListText implements TabInterface
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function canShowTab()
     {
-        return $this->authorization->isAllowed('Magento_Sales::sales_invoice');
+        return true;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function isHidden()
     {

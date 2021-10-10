@@ -39,9 +39,6 @@ class FormTest extends TestCase
      */
     protected $orderConfig;
 
-    /**
-     * @inheirtDoc
-     */
     protected function setUp(): void
     {
         $objectManager = new ObjectManager($this);
@@ -64,10 +61,7 @@ class FormTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testToHtml(): void
+    public function testToHtml()
     {
         $statuses = ['status1', 'status2'];
         $states = ['state1', 'state2'];
@@ -98,49 +92,45 @@ class FormTest extends TestCase
             ->method('getStates')
             ->willReturn($states);
 
-        $fieldset->method('addField')
-            ->withConsecutive(
+        $fieldset->expects($this->at(0))
+            ->method('addField')
+            ->with(
+                'status',
+                'select',
                 [
-                    'status',
-                    'select',
-                    [
-                        'name' => 'status',
-                        'label' => __('Order Status'),
-                        'class' => 'required-entry',
-                        'values' => $statusesForField,
-                        'required' => true
-                    ]
-                ],
-                [
-                    'state',
-                    'select',
-                    [
-                        'name' => 'state',
-                        'label' => __('Order State'),
-                        'class' => 'required-entry',
-                        'values' => $statesForField,
-                        'required' => true
-                    ]
-                ],
-                [
-                    'is_default',
-                    'checkbox',
-                    [
-                        'name' => 'is_default',
-                        'label' => __('Use Order Status As Default'),
-                        'value' => 1
-                    ]
-                ],
-                [
-                    'visible_on_front',
-                    'checkbox',
-                    [
-                        'name' => 'visible_on_front',
-                        'label' => __('Visible On Storefront'),
-                        'value' => 1,
-                        'checked' => true
-                    ]
+                    'name' => 'status',
+                    'label' => __('Order Status'),
+                    'class' => 'required-entry',
+                    'values' => $statusesForField,
+                    'required' => true
                 ]
+            );
+        $fieldset->expects($this->at(1))
+            ->method('addField')
+            ->with(
+                'state',
+                'select',
+                [
+                    'name' => 'state',
+                    'label' => __('Order State'),
+                    'class' => 'required-entry',
+                    'values' => $statesForField,
+                    'required' => true
+                ]
+            );
+        $fieldset->expects($this->at(2))
+            ->method('addField')
+            ->with(
+                'is_default',
+                'checkbox',
+                ['name' => 'is_default', 'label' => __('Use Order Status As Default'), 'value' => 1]
+            );
+        $fieldset->expects($this->at(3))
+            ->method('addField')
+            ->with(
+                'visible_on_front',
+                'checkbox',
+                ['name' => 'visible_on_front', 'label' => __('Visible On Storefront'), 'value' => 1, 'checked' => true]
             );
 
         $this->block->toHtml();

@@ -81,16 +81,13 @@ class LastOrderedItemsTest extends TestCase
      */
     private $loggerMock;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->orderCollectionFactoryMock =
             $this->getMockBuilder(CollectionFactory::class)
                 ->disableOriginalConstructor()
-                ->onlyMethods(['create'])
+                ->setMethods(['create'])
                 ->getMock();
         $this->orderConfigMock = $this->getMockBuilder(Config::class)
             ->disableOriginalConstructor()
@@ -121,10 +118,7 @@ class LastOrderedItemsTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     */
-    public function testGetSectionData(): void
+    public function testGetSectionData()
     {
         $storeId = 1;
         $websiteId = 4;
@@ -132,13 +126,13 @@ class LastOrderedItemsTest extends TestCase
             'id' => 1,
             'name' => 'Product Name 1',
             'url' => 'http://example.com',
-            'is_saleable' => true
+            'is_saleable' => true,
         ];
         $expectedItem2 = [
             'id' => 2,
             'name' => 'Product Name 2',
             'url' => null,
-            'is_saleable' => true
+            'is_saleable' => true,
         ];
         $productIdVisible = 1;
         $productIdNotVisible = 2;
@@ -189,14 +183,14 @@ class LastOrderedItemsTest extends TestCase
             ->method('getById')
             ->willReturnMap([
                 [$productIdVisible, false, $storeId, false, $productVisible],
-                [$productIdNotVisible, false, $storeId, false, $productNotVisible]
+                [$productIdNotVisible, false, $storeId, false, $productNotVisible],
             ]);
         $this->stockRegistryMock
             ->expects($this->any())
             ->method('getStockItem')
             ->willReturnMap([
                 [$productIdVisible, $websiteId, $stockItemMock],
-                [$productIdNotVisible, $websiteId, $stockItemMock]
+                [$productIdNotVisible, $websiteId, $stockItemMock],
             ]);
         $stockItemMock->expects($this->exactly(2))->method('getIsInStock')->willReturn($expectedItem1['is_saleable']);
         $this->assertEquals(['items' => [$expectedItem1, $expectedItem2]], $this->section->getSectionData());
@@ -205,7 +199,7 @@ class LastOrderedItemsTest extends TestCase
     /**
      * @return MockObject
      */
-    private function getLastOrderMock(): MockObject
+    private function getLastOrderMock()
     {
         $customerId = 1;
         $visibleOnFrontStatuses = ['complete'];
@@ -217,11 +211,14 @@ class LastOrderedItemsTest extends TestCase
             ->method('getVisibleOnFrontStatuses')
             ->willReturn($visibleOnFrontStatuses);
         $this->orderCollectionFactoryMock->expects($this->once())->method('create')->willReturn($orderCollectionMock);
-        $orderCollectionMock->method('addAttributeToFilter')
-            ->withConsecutive(
-                ['customer_id', $customerId],
-                ['status', ['in' => $visibleOnFrontStatuses]]
-            )->willReturnOnConsecutiveCalls($orderCollectionMock, $orderCollectionMock);
+        $orderCollectionMock->expects($this->at(0))
+            ->method('addAttributeToFilter')
+            ->with('customer_id', $customerId)
+            ->willReturnSelf();
+        $orderCollectionMock->expects($this->at(1))
+            ->method('addAttributeToFilter')
+            ->with('status', ['in' => $visibleOnFrontStatuses])
+            ->willReturnSelf();
         $orderCollectionMock->expects($this->once())
             ->method('addAttributeToSort')
             ->willReturnSelf();
@@ -231,10 +228,7 @@ class LastOrderedItemsTest extends TestCase
         return $this->orderMock;
     }
 
-    /**
-     * @return void
-     */
-    public function testGetSectionDataWithNotExistingProduct(): void
+    public function testGetSectionDataWithNotExistingProduct()
     {
         $storeId = 1;
         $websiteId = 4;
@@ -242,7 +236,7 @@ class LastOrderedItemsTest extends TestCase
         $exception = new NoSuchEntityException(__("Product doesn't exist"));
         $orderItemMock = $this->getMockBuilder(Item::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getProductId'])
+            ->setMethods(['getProductId'])
             ->getMock();
         $storeMock = $this->getMockBuilder(StoreInterface::class)
             ->getMockForAbstractClass();

@@ -92,6 +92,7 @@ class SaveTest extends TestCase
 
         $this->requestMock = $this->getMockBuilder(Http::class)
             ->disableOriginalConstructor()
+            ->setMethods([])
             ->getMock();
         $this->responseMock = $this->getMockBuilder(\Magento\Framework\App\Response\Http::class)
             ->disableOriginalConstructor()
@@ -99,7 +100,7 @@ class SaveTest extends TestCase
 
         $this->resultPageFactoryMock = $this->getMockBuilder(PageFactory::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+            ->setMethods(['create'])
             ->getMock();
 
         $this->formKeyValidatorMock = $this->getMockBuilder(Validator::class)
@@ -137,18 +138,18 @@ class SaveTest extends TestCase
             ->willReturn($this->objectManager);
         $this->invoiceSender = $this->getMockBuilder(InvoiceSender::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['send'])
+            ->setMethods(['send'])
             ->getMock();
         $this->invoiceSender->expects($this->any())
             ->method('send')
             ->willReturn(true);
         $this->salesData = $this->getMockBuilder(SalesData::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['canSendNewInvoiceEmail'])
+            ->setMethods(['canSendNewInvoiceEmail'])
             ->getMock();
         $this->invoiceService = $this->getMockBuilder(InvoiceService::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['prepareInvoice'])
+            ->setMethods(['prepareInvoice'])
             ->getMock();
 
         $this->controller = $objectManager->getObject(
@@ -167,7 +168,7 @@ class SaveTest extends TestCase
      *
      * @return void
      */
-    public function testExecuteNotValidPost(): void
+    public function testExecuteNotValidPost()
     {
         $redirectMock = $this->getMockBuilder(Redirect::class)
             ->disableOriginalConstructor()
@@ -196,7 +197,7 @@ class SaveTest extends TestCase
     /**
      * @return array
      */
-    public function testExecuteEmailsDataProvider(): array
+    public function testExecuteEmailsDataProvider()
     {
         /**
         * string $sendEmail
@@ -215,16 +216,14 @@ class SaveTest extends TestCase
      * @param string $sendEmail
      * @param bool $emailEnabled
      * @param bool $shouldEmailBeSent
-     *
-     * @return void
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      * @dataProvider testExecuteEmailsDataProvider
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     public function testExecuteEmails(
-        string $sendEmail,
-        bool $emailEnabled,
-        bool $shouldEmailBeSent
-    ): void {
+        $sendEmail,
+        $emailEnabled,
+        $shouldEmailBeSent
+    ) {
         $redirectMock = $this->getMockBuilder(Redirect::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -263,7 +262,7 @@ class SaveTest extends TestCase
 
         $invoice = $this->getMockBuilder(Invoice::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getTotalQty', 'getOrder', 'register'])
+            ->setMethods(['getTotalQty','getOrder','register'])
             ->getMock();
         $invoice->expects($this->any())
             ->method('getTotalQty')
@@ -281,16 +280,20 @@ class SaveTest extends TestCase
 
         $saveTransaction = $this->getMockBuilder(Transaction::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['addObject', 'save'])
+            ->setMethods(['addObject','save'])
             ->getMock();
-        $saveTransaction
+        $saveTransaction->expects($this->at(0))
             ->method('addObject')
-            ->withConsecutive([$invoice], [$order])
-            ->willReturnOnConsecutiveCalls($saveTransaction, $saveTransaction);
+            ->with($invoice)->willReturnSelf();
+        $saveTransaction->expects($this->at(1))
+            ->method('addObject')
+            ->with($order)->willReturnSelf();
+        $saveTransaction->expects($this->at(2))
+            ->method('save');
 
         $session = $this->getMockBuilder(Session::class)
             ->disableOriginalConstructor()
-            ->addMethods(['getCommentText'])
+            ->setMethods(['getCommentText'])
             ->getMock();
         $session->expects($this->once())
             ->method('getCommentText')

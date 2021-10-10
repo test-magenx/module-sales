@@ -121,8 +121,6 @@ class EmailSenderTest extends TestCase
     private $senderBuilderFactoryMock;
 
     /**
-     * @inheritDoc
-     *
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
     protected function setUp(): void
@@ -132,7 +130,7 @@ class EmailSenderTest extends TestCase
             ->getMock();
 
         $this->storeMock = $this->getMockBuilder(Store::class)
-            ->addMethods(['getStoreId'])
+            ->setMethods(['getStoreId'])
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -145,7 +143,7 @@ class EmailSenderTest extends TestCase
 
         $this->senderMock = $this->getMockBuilder(Sender::class)
             ->disableOriginalConstructor()
-            ->addMethods(['send', 'sendCopyTo'])
+            ->setMethods(['send', 'sendCopyTo'])
             ->getMock();
 
         $this->loggerMock = $this->getMockBuilder(LoggerInterface::class)
@@ -154,8 +152,7 @@ class EmailSenderTest extends TestCase
 
         $this->creditmemoMock = $this->getMockBuilder(\Magento\Sales\Model\Order\Creditmemo::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['setEmailSent'])
-            ->addMethods(['setSendEmail'])
+            ->setMethods(['setSendEmail', 'setEmailSent'])
             ->getMock();
 
         $this->commentMock = $this->getMockBuilder(CreditmemoCommentCreationInterface::class)
@@ -230,9 +227,11 @@ class EmailSenderTest extends TestCase
             ->method('getStore')
             ->willReturn($this->storeMock);
 
-        $this->senderBuilderFactoryMock = $this->getMockBuilder(SenderBuilderFactory::class)
+        $this->senderBuilderFactoryMock = $this->getMockBuilder(
+            SenderBuilderFactory::class
+        )
             ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+            ->setMethods(['create'])
             ->getMock();
 
         $this->subject = new EmailSender(
@@ -254,16 +253,13 @@ class EmailSenderTest extends TestCase
      * @param bool $isComment
      * @param bool $emailSendingResult
      *
+     * @dataProvider sendDataProvider
+     *
      * @return void
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     * @dataProvider sendDataProvider
      */
-    public function testSend(
-        int $configValue,
-        bool $forceSyncMode,
-        bool $isComment,
-        bool $emailSendingResult
-    ): void {
+    public function testSend($configValue, $forceSyncMode, $isComment, $emailSendingResult)
+    {
         $this->globalConfigMock->expects($this->once())
             ->method('getValue')
             ->with('sales_email/general/async_sending')
@@ -296,8 +292,8 @@ class EmailSenderTest extends TestCase
                     'customer_name' => 'Customer name',
                     'is_not_virtual' => true,
                     'email_customer_note' => null,
-                    'frontend_status_label' => 'Pending'
-                ]
+                    'frontend_status_label' => 'Pending',
+                ],
             ];
             $transport = new DataObject($transport);
 
@@ -370,12 +366,12 @@ class EmailSenderTest extends TestCase
                 ->method('setEmailSent')
                 ->with(null);
 
-            $this->creditmemoResourceMock
+            $this->creditmemoResourceMock->expects($this->at(0))
                 ->method('saveAttribute')
-                ->withConsecutive(
-                    [$this->creditmemoMock, 'email_sent'],
-                    [$this->creditmemoMock, 'send_email']
-                );
+                ->with($this->creditmemoMock, 'email_sent');
+            $this->creditmemoResourceMock->expects($this->at(1))
+                ->method('saveAttribute')
+                ->with($this->creditmemoMock, 'send_email');
 
             $this->assertFalse(
                 $this->subject->send(
@@ -391,14 +387,14 @@ class EmailSenderTest extends TestCase
     /**
      * @return array
      */
-    public function sendDataProvider(): array
+    public function sendDataProvider()
     {
         return [
             'Successful sync sending with comment' => [0, false, true, true],
             'Successful sync sending without comment' => [0, false, false, true],
             'Failed sync sending with comment' => [0, false, true, false],
             'Successful forced sync sending with comment' => [1, true, true, true],
-            'Async sending' => [1, false, false, false]
+            'Async sending' => [1, false, false, false],
         ];
     }
 }

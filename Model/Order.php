@@ -31,8 +31,6 @@ use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection as ShipmentColle
 use Magento\Sales\Model\ResourceModel\Order\Shipment\Track\Collection as TrackCollection;
 use Magento\Sales\Model\ResourceModel\Order\Status\History\Collection as HistoryCollection;
 use Magento\Store\Model\ScopeInterface;
-use Magento\Framework\App\Area;
-use Magento\Sales\Model\Order\StatusLabel;
 
 /**
  * Order model
@@ -327,11 +325,6 @@ class Order extends AbstractModel implements EntityInterface, OrderInterface
     private $regionResource;
 
     /**
-     * @var StatusLabel
-     */
-    private $statusLabel;
-
-    /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
      * @param \Magento\Framework\Api\ExtensionAttributesFactory $extensionFactory
@@ -402,8 +395,7 @@ class Order extends AbstractModel implements EntityInterface, OrderInterface
         SearchCriteriaBuilder $searchCriteriaBuilder = null,
         ScopeConfigInterface $scopeConfig = null,
         RegionFactory $regionFactory = null,
-        RegionResource $regionResource = null,
-        StatusLabel $statusLabel = null
+        RegionResource $regionResource = null
     ) {
         $this->_storeManager = $storeManager;
         $this->_orderConfig = $orderConfig;
@@ -435,7 +427,7 @@ class Order extends AbstractModel implements EntityInterface, OrderInterface
         $this->regionFactory = $regionFactory ?: ObjectManager::getInstance()->get(RegionFactory::class);
         $this->regionResource = $regionResource ?: ObjectManager::getInstance()->get(RegionResource::class);
         $this->regionItems = [];
-        $this->statusLabel = $statusLabel ?: ObjectManager::getInstance()->get(StatusLabel::class);
+
         parent::__construct(
             $context,
             $registry,
@@ -1112,11 +1104,7 @@ class Order extends AbstractModel implements EntityInterface, OrderInterface
      */
     public function getFrontendStatusLabel()
     {
-        return $this->statusLabel->getStatusFrontendLabel(
-            $this->getStatus(),
-            Area::AREA_FRONTEND,
-            $this->getStoreId()
-        );
+        return $this->getConfig()->getStatusFrontendLabel($this->getStatus());
     }
 
     /**
@@ -1127,7 +1115,7 @@ class Order extends AbstractModel implements EntityInterface, OrderInterface
      */
     public function getStatusLabel()
     {
-        return $this->statusLabel->getStatusLabel($this->getStatus());
+        return $this->getConfig()->getStatusLabel($this->getStatus());
     }
 
     /**

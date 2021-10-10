@@ -5,9 +5,7 @@
  */
 namespace Magento\Sales\Model\Order;
 
-use Magento\Framework\App\Area;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\App\ObjectManager;
 
 /**
  * Order configuration model
@@ -53,16 +51,11 @@ class Config
      * @var array
      */
     protected $maskStatusesMapping = [
-        Area::AREA_FRONTEND => [
+        \Magento\Framework\App\Area::AREA_FRONTEND => [
             \Magento\Sales\Model\Order::STATUS_FRAUD => \Magento\Sales\Model\Order::STATUS_FRAUD,
             \Magento\Sales\Model\Order::STATE_PAYMENT_REVIEW => \Magento\Sales\Model\Order::STATE_PROCESSING
         ]
     ];
-
-    /**
-     * @var StatusLabel
-     */
-    private $statusLabel;
 
     /**
      * Constructor
@@ -70,18 +63,15 @@ class Config
      * @param \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory
      * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollectionFactory
      * @param \Magento\Framework\App\State $state
-     * @param StatusLabel|null $statusLabel
      */
     public function __construct(
         \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory,
         \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollectionFactory,
-        \Magento\Framework\App\State $state,
-        StatusLabel $statusLabel = null
+        \Magento\Framework\App\State $state
     ) {
         $this->orderStatusFactory = $orderStatusFactory;
         $this->orderStatusCollectionFactory = $orderStatusCollectionFactory;
         $this->state = $state;
-        $this->statusLabel = $statusLabel ?: ObjectManager::getInstance()->get(StatusLabel::class);
     }
 
     /**
@@ -130,6 +120,24 @@ class Config
         return $status;
     }
 
+    /**
+     * Get status label for a specified area
+     *
+     * @param string|null $code
+     * @param string $area
+     * @return string|null
+     */
+    private function getStatusLabelForArea(?string $code, string $area): ?string
+    {
+        $code = $this->maskStatusForArea($area, $code);
+        $status = $this->orderStatusFactory->create()->load($code);
+
+        if ($area === 'adminhtml') {
+            return $status->getLabel();
+        }
+
+        return $status->getStoreLabel();
+    }
 
     /**
      * Retrieve status label for detected area
@@ -137,12 +145,11 @@ class Config
      * @param string|null $code
      * @return string|null
      * @throws LocalizedException
-     * @deprecated Functionality moved to separate class
-     * @see \Magento\Sales\Model\Order\StatusLabel::getStatusLabel
      */
     public function getStatusLabel($code)
     {
-        return $this->statusLabel->getStatusLabel($code);
+        $area = $this->state->getAreaCode() ?: \Magento\Framework\App\Area::AREA_FRONTEND;
+        return $this->getStatusLabelForArea($code, $area);
     }
 
     /**
@@ -151,12 +158,10 @@ class Config
      * @param string|null $code
      * @return string|null
      * @since 102.0.1
-     * @deprecated Functionality moved to separate class
-     * @see \Magento\Sales\Model\Order\StatusLabel::getStatusFrontendLabel
      */
     public function getStatusFrontendLabel(?string $code): ?string
     {
-        return $this->statusLabel->getStatusFrontendLabel($code, Area::AREA_FRONTEND);
+        return $this->getStatusLabelForArea($code, \Magento\Framework\App\Area::AREA_FRONTEND);
     }
 
     /**
@@ -165,12 +170,13 @@ class Config
      * @param string $area
      * @param string $code
      * @return string
-     * @deprecated Functionality moved to separate class
-     * @see \Magento\Sales\Model\Order\StatusLabel::maskStatusForArea
      */
     protected function maskStatusForArea($area, $code)
     {
-        return $this->statusLabel->maskStatusForArea($area, $code);
+        if (isset($this->maskStatusesMapping[$area][$code])) {
+            return $this->maskStatusesMapping[$area][$code];
+        }
+        return $code;
     }
 
     /**

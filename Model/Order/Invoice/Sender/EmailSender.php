@@ -104,9 +104,7 @@ class EmailSender extends Sender implements SenderInterface
 
             $transport = [
                 'order' => $order,
-                'order_id' => $order->getId(),
                 'invoice' => $invoice,
-                'invoice_id' => $invoice->getId(),
                 'comment' => $comment ? $comment->getComment() : '',
                 'billing' => $order->getBillingAddress(),
                 'payment_html' => $this->getPaymentHtml($order),

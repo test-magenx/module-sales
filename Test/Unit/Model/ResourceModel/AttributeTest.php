@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace Magento\Sales\Test\Unit\Model\ResourceModel;
 
-use Exception;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Adapter\Pdo\Mysql;
@@ -44,9 +43,6 @@ class AttributeTest extends TestCase
      */
     protected $connectionMock;
 
-    /**
-     * @inheritDoc
-     */
     protected function setUp(): void
     {
         $this->appResourceMock = $this->createMock(ResourceConnection::class);
@@ -86,10 +82,9 @@ class AttributeTest extends TestCase
     }
 
     /**
-     * @return void
-     * @throws Exception
+     * @throws \Exception
      */
-    public function testSave(): void
+    public function testSave()
     {
         $this->appResourceMock->expects($this->once())
             ->method('getConnection')
@@ -100,26 +95,20 @@ class AttributeTest extends TestCase
         $this->modelMock->expects($this->any())
             ->method('getEventObject')
             ->willReturn('event_object');
-        $this->eventManagerMock
+        $this->eventManagerMock->expects($this->at(0))
             ->method('dispatch')
-            ->withConsecutive(
-                [
-                    'event_prefix_save_attribute_before',
-                    [
-                        'event_object' => $this->attribute,
-                        'object' => $this->modelMock,
-                        'attribute' => ['attribute']
-                    ]
-                ],
-                [
-                    'event_prefix_save_attribute_after',
-                    [
-                        'event_object' => $this->attribute,
-                        'object' => $this->modelMock,
-                        'attribute' => ['attribute']
-                    ]
-                ]
-            );
+            ->with('event_prefix_save_attribute_before', [
+                'event_object' => $this->attribute,
+                'object' => $this->modelMock,
+                'attribute' => ['attribute']
+            ]);
+        $this->eventManagerMock->expects($this->at(1))
+            ->method('dispatch')
+            ->with('event_prefix_save_attribute_after', [
+                'event_object' => $this->attribute,
+                'object' => $this->modelMock,
+                'attribute' => ['attribute']
+            ]);
         $this->connectionMock->expects($this->once())
             ->method('beginTransaction');
         $this->connectionMock->expects($this->once())
@@ -128,10 +117,9 @@ class AttributeTest extends TestCase
     }
 
     /**
-     * @return void
-     * @throws Exception
+     * @throws \Exception
      */
-    public function testSaveFailed(): void
+    public function testSaveFailed()
     {
         $this->expectException('Exception');
         $this->expectExceptionMessage('Expected Exception');
@@ -144,7 +132,7 @@ class AttributeTest extends TestCase
         $this->appResourceMock->expects($this->once())
             ->method('getConnection')
             ->willReturn($this->connectionMock);
-        $exception  = new Exception('Expected Exception');
+        $exception  = new \Exception('Expected Exception');
         $this->modelMock->expects($this->any())
             ->method('getId')
             ->willThrowException($exception);

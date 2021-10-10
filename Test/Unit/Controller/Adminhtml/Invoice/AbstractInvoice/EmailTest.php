@@ -104,7 +104,7 @@ class EmailTest extends TestCase
     protected $invoiceManagement;
 
     /**
-     * @inheritDoc
+     * Test setup
      */
     protected function setUp(): void
     {
@@ -125,7 +125,7 @@ class EmailTest extends TestCase
             ->getMock();
         $this->resultRedirectFactory = $this->getMockBuilder(RedirectFactory::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+            ->setMethods(['create'])
             ->getMock();
 
         $this->context->expects($this->once())
@@ -161,22 +161,22 @@ class EmailTest extends TestCase
             ->getMock();
         $this->resultForwardFactory = $this->getMockBuilder(ForwardFactory::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['create'])
+            ->setMethods(['create'])
             ->getMock();
 
         $this->invoiceEmail = $objectManagerHelper->getObject(
             OrderInvoiceEmail::class,
             [
                 'context' => $this->context,
-                'resultForwardFactory' => $this->resultForwardFactory
+                'resultForwardFactory' => $this->resultForwardFactory,
             ]
         );
     }
 
     /**
-     * @return void
+     * testEmail
      */
-    public function testEmail(): void
+    public function testEmail()
     {
         $invoiceId = 10000031;
         $orderId = 100000030;
@@ -201,14 +201,18 @@ class EmailTest extends TestCase
         $invoiceRepository->expects($this->any())
             ->method('get')
             ->willReturn($invoice);
+        $this->objectManager->expects($this->at(0))
+            ->method('create')
+            ->with(InvoiceRepositoryInterface::class)
+            ->willReturn($invoiceRepository);
 
         $invoice->expects($this->once())
             ->method('getOrder')
             ->willReturn($order);
-        $this->objectManager
+        $this->objectManager->expects($this->at(1))
             ->method('create')
-            ->withConsecutive([InvoiceRepositoryInterface::class], [$cmNotifierClassName])
-            ->willReturnOnConsecutiveCalls($invoiceRepository, $this->invoiceManagement);
+            ->with($cmNotifierClassName)
+            ->willReturn($this->invoiceManagement);
 
         $this->invoiceManagement->expects($this->once())
             ->method('notify')
@@ -229,9 +233,9 @@ class EmailTest extends TestCase
     }
 
     /**
-     * @return void
+     * testEmailNoInvoiceId
      */
-    public function testEmailNoInvoiceId(): void
+    public function testEmailNoInvoiceId()
     {
         $this->request->expects($this->once())
             ->method('getParam')
@@ -249,9 +253,9 @@ class EmailTest extends TestCase
     }
 
     /**
-     * @return void
+     * testEmailNoInvoice
      */
-    public function testEmailNoInvoice(): void
+    public function testEmailNoInvoice()
     {
         $invoiceId = 10000031;
         $this->request->expects($this->once())
@@ -265,7 +269,7 @@ class EmailTest extends TestCase
         $invoiceRepository->expects($this->any())
             ->method('get')
             ->willReturn(null);
-        $this->objectManager
+        $this->objectManager->expects($this->at(0))
             ->method('create')
             ->with(InvoiceRepositoryInterface::class)
             ->willReturn($invoiceRepository);

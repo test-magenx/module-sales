@@ -22,7 +22,6 @@ use Magento\Sales\Model\Order\Item;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Sales\Model\ResourceModel\Order\Item\Collection as ItemCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
-use Psr\Log\LoggerInterface;
 
 /**
  * Allows customer quickly to reorder previously added products and put them to the Cart
@@ -64,7 +63,7 @@ class Reorder
     private $reorderHelper;
 
     /**
-     * @var LoggerInterface
+     * @var \Psr\Log\LoggerInterface
      */
     private $logger;
 
@@ -94,19 +93,13 @@ class Reorder
     private $guestCartResolver;
 
     /**
-     * @var OrderInfoBuyRequestGetter
-     */
-    private $orderInfoBuyRequestGetter;
-
-    /**
      * @param OrderFactory $orderFactory
      * @param CustomerCartResolver $customerCartProvider
      * @param GuestCartResolver $guestCartResolver
      * @param CartRepositoryInterface $cartRepository
      * @param ReorderHelper $reorderHelper
-     * @param LoggerInterface $logger
+     * @param \Psr\Log\LoggerInterface $logger
      * @param ProductCollectionFactory $productCollectionFactory
-     * @param OrderInfoBuyRequestGetter $orderInfoBuyRequestGetter
      */
     public function __construct(
         OrderFactory $orderFactory,
@@ -114,9 +107,8 @@ class Reorder
         GuestCartResolver $guestCartResolver,
         CartRepositoryInterface $cartRepository,
         ReorderHelper $reorderHelper,
-        LoggerInterface $logger,
-        ProductCollectionFactory $productCollectionFactory,
-        OrderInfoBuyRequestGetter $orderInfoBuyRequestGetter
+        \Psr\Log\LoggerInterface $logger,
+        ProductCollectionFactory $productCollectionFactory
     ) {
         $this->orderFactory = $orderFactory;
         $this->cartRepository = $cartRepository;
@@ -125,7 +117,6 @@ class Reorder
         $this->customerCartProvider = $customerCartProvider;
         $this->guestCartResolver = $guestCartResolver;
         $this->productCollectionFactory = $productCollectionFactory;
-        $this->orderInfoBuyRequestGetter = $orderInfoBuyRequestGetter;
     }
 
     /**
@@ -252,11 +243,13 @@ class Reorder
      */
     private function addItemToCart(OrderItemInterface $orderItem, Quote $cart, ProductInterface $product): void
     {
-        $infoBuyRequest = $this->orderInfoBuyRequestGetter->getInfoBuyRequest($orderItem);
+        $info = $orderItem->getProductOptionByCode('info_buyRequest');
+        $info = new \Magento\Framework\DataObject($info);
+        $info->setQty($orderItem->getQtyOrdered());
 
         $addProductResult = null;
         try {
-            $addProductResult = $cart->addProduct($product, $infoBuyRequest);
+            $addProductResult = $cart->addProduct($product, $info);
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             $this->addError($this->getCartItemErrorMessage($orderItem, $product, $e->getMessage()));
         } catch (\Throwable $e) {
